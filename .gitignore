@@ -154,3 +154,5 @@ cython_debug/
 test*/
 Skills
 .claude
+skill-guard.zip
+whitelist_bak.txt

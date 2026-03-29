@@ -78,24 +78,78 @@ MEDIUM_SAMPLES = [
 # 工具函数
 # ---------------------------------------------------------------------------
 
-def read_skill_file(path: str) -> str | None:
-    """读取 SKILL.md 文件内容。
+# 纳入训练文本的文件扩展名（可执行脚本 + 文档）
+_TEXT_EXTS = {".md", ".py", ".sh", ".js", ".ts", ".rb", ".go", ".ps1", ".bat", ".cmd", ".txt"}
+# 优先级最高的目录前缀（相对 skill 根目录）
+_KEY_DIRS = ("scripts", "references", "assets")
+
+
+def read_file(path: str) -> str | None:
+    """读取文本文件内容。
 
     Args:
         path (str): 文件路径。
 
     Returns:
-        str | None: 文件内容，读取失败时返回 None。
+        str | None: 文件内容，读取失败或为空时返回 None。
     """
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            return f.read().strip()
+            return f.read().strip() or None
     except OSError:
         return None
 
 
+def collect_skill_text(skill_path: str) -> str:
+    """收集 skill 目录下所有关键文件的文本内容并拼接。
+
+    按以下优先级收集：
+    1. 根目录 SKILL.md
+    2. scripts/ references/ assets/ 子目录中所有文本文件
+    3. 根目录其余文本文件
+
+    Args:
+        skill_path (str): skill 根目录路径。
+
+    Returns:
+        str: 拼接后的文本（各文件以空行分隔）。
+    """
+    parts: list[str] = []
+
+    # 1. SKILL.md 优先
+    skill_md = os.path.join(skill_path, "SKILL.md")
+    if os.path.isfile(skill_md):
+        text = read_file(skill_md)
+        if text:
+            parts.append(text)
+
+    # 2. 关键子目录
+    for subdir in _KEY_DIRS:
+        subpath = os.path.join(skill_path, subdir)
+        if not os.path.isdir(subpath):
+            continue
+        for root, _, files in os.walk(subpath):
+            for fname in sorted(files):
+                if os.path.splitext(fname)[1].lower() in _TEXT_EXTS:
+                    text = read_file(os.path.join(root, fname))
+                    if text:
+                        parts.append(text)
+
+    # 3. 根目录其余文本文件
+    for fname in sorted(os.listdir(skill_path)):
+        if fname == "SKILL.md":
+            continue
+        fpath = os.path.join(skill_path, fname)
+        if os.path.isfile(fpath) and os.path.splitext(fname)[1].lower() in _TEXT_EXTS:
+            text = read_file(fpath)
+            if text:
+                parts.append(text)
+
+    return "\n\n".join(parts)
+
+
 def load_real_samples(skills_dir: str) -> tuple[list[dict], list[dict]]:
-    """从真实 Skills 目录加载危险和安全样本。
+    """从真实 Skills 目录加载危险和安全样本（含所有关键文件）。
 
     Args:
         skills_dir (str): Skills 数据集根目录，包含 Dangerous_skills 和 Safe_skills 子目录。
@@ -116,11 +170,11 @@ def load_real_samples(skills_dir: str) -> tuple[list[dict], list[dict]]:
             continue
         for skill_name in os.listdir(folder):
             skill_path = os.path.join(folder, skill_name)
-            skill_md = os.path.join(skill_path, "SKILL.md")
-            if os.path.isfile(skill_md):
-                text = read_skill_file(skill_md)
-                if text:
-                    target.append({"text": text, "label": label})
+            if not os.path.isdir(skill_path):
+                continue
+            text = collect_skill_text(skill_path)
+            if text:
+                target.append({"text": text, "label": label})
 
     return dangerous, safe
 

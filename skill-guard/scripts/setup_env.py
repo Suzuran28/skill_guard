@@ -17,8 +17,8 @@ import sys
 
 
 REQUIRED = [
-    ("sklearn",  "scikit-learn", "1.2.0"),
-    ("xgboost",  "xgboost",      "1.7.0"),
+    ("sklearn",  "scikit-learn", "1.7.2"),
+    ("xgboost",  "xgboost",      "3.2.0"),
 ]
 
 
@@ -38,20 +38,32 @@ def check_module(import_name: str) -> str | None:
         return None
 
 
+# 国内镜像源，按优先级轮换
+_MIRRORS = [
+    None,  # 官方源（优先）
+    "https://pypi.tuna.tsinghua.edu.cn/simple",
+    "https://mirrors.ustc.edu.cn/pypi/simple",
+    "https://mirrors.aliyun.com/pypi/simple",
+]
+
+
 def pip_install(package: str) -> bool:
-    """使用当前 Python 环境的 pip 安装包。
+    """使用当前 Python 环境的 pip 安装包，失败时自动轮换国内镜像源。
 
     Args:
         package (str): pip 包名。
 
     Returns:
-        bool: 安装成功返回 True，否则返回 False。
+        bool: 至少一个源安装成功返回 True，否则返回 False。
     """
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", package, "--quiet"],
-        capture_output=True,
-    )
-    return result.returncode == 0
+    for mirror in _MIRRORS:
+        cmd = [sys.executable, "-m", "pip", "install", package, "--quiet"]
+        if mirror:
+            cmd += ["-i", mirror, "--trusted-host", mirror.split("/")[2]]
+        result = subprocess.run(cmd, capture_output=True)
+        if result.returncode == 0:
+            return True
+    return False
 
 
 def main() -> None:
@@ -87,7 +99,7 @@ def main() -> None:
             print("[WARN] 模型文件缺失:")
             for f in missing:
                 print(f"       - model/{f}")
-            print("       请运行 src_model/02_train_model.py 生成模型文件。")
+            print("       未找到模型文件，请重新下载skill")
         else:
             print("[OK]  模型文件完整")
             print("\n环境配置完成，可运行:")
