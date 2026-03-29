@@ -1,6 +1,9 @@
 .git
 .gitignore
+.claude
 LICENSE
 README.md
 result.txt
 skill-guard
+Skills
+src_model
