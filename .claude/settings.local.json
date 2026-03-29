@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(e:/conda/envs/pytorch/python.exe 02_train_model.py)"
-    ]
-  }
-}
