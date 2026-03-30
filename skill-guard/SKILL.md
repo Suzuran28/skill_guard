@@ -61,3 +61,13 @@ test_auto-updater-xxx                    HIGH      100.0%
 | `low` | 访问本地文件、环境变量、系统命令 | 留意权限范围 |
 | `medium` | 网络外发、提权、动态执行代码、注册表操作 | 审查来源与内容 |
 | `high` | **反弹 shell、禁用安全软件、数据窃取、下载执行远程脚本** | **立即删除** |
+
+## 白名单
+
+在确定 skill 安全或者风险可控的情况下，可以将其添加到白名单中，避免未来扫描时重复报警：
+
+```bash
+echo "\n{skill_name}" >> ~/.openclaw/workspace/skills/skill-guard/whitelist.txt
+```
+
+> 注意： 上述的 {skill_name} 需要替换为实际的 skill 名称，且白名单应谨慎使用，确保只添加经过充分审查的 skill
