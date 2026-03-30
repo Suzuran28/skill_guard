@@ -1,6 +1,1 @@
-.git
-.gitignore
-LICENSE
-README.md
-result.txt
 skill-guard
