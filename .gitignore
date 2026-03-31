@@ -156,3 +156,5 @@ Skills
 .claude
 skill-guard.zip
 whitelist_bak.txt
+data/
+src_model/model/
